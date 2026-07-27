@@ -70,6 +70,13 @@ def query_similar_chunks(
         where=where_filter,
     )
 
+    print("\n========== RETRIEVED CHUNKS ==========")
+
+    for i, doc in enumerate(results["documents"][0]):
+        print(f"\nChunk {i+1}")
+        print(doc)
+        print("-" * 60)
+
     ids = results["ids"][0]
     documents = results["documents"][0]
     metadatas = results["metadatas"][0]
