@@ -3,7 +3,7 @@ uvicorn[standard]==0.34.0
 python-multipart==0.0.20
 pydantic==2.10.4
 pypdf==5.1.0
-chromadb
-python-dotenv
-google-genai
+chromadb==1.5.9
+google-genai==2.8.0
+python-dotenv==1.2.2
 streamlit==1.45.1
