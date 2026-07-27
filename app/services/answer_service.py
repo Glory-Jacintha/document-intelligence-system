@@ -1,13 +1,20 @@
 import re
 
-from google import genai
-
 from app.core.config import GEMINI_API_KEY, GEMINI_MODEL
 from app.schemas.document import DocumentSearchResult
-from app.services.vector_store import STOP_WORDS
+from app.services.vector_store import query_similar_chunks
 
 
 SNIPPET_WINDOW_CHARS = 300
+
+STOP_WORDS = {
+    "a", "an", "the", "is", "it", "in", "on", "at", "to", "for",
+    "of", "and", "or", "but", "with", "this", "that", "are", "was",
+    "were", "be", "been", "being", "have", "has", "had", "do", "does",
+    "did", "will", "would", "could", "should", "may", "might", "shall",
+    "can", "need", "dare", "ought", "used", "what", "which", "who",
+    "how", "when", "where", "why", "policy", "policies",
+}
 
 
 def _find_keyword_position(question: str, text: str) -> int | None:
@@ -55,19 +62,10 @@ def create_extractive_answer(question: str, sources: list[DocumentSearchResult])
     if not sources:
         return "I could not find relevant information in the indexed documents."
 
-    return _build_answer_snippet(question, sources[0])
+    answer_snippet = _build_answer_snippet(question, sources[0])
+    sources_list = _build_sources_list(sources)
 
-
-def _build_context(sources: list[DocumentSearchResult]) -> str:
-    return "\n\n".join(
-        (
-            f"Source {index + 1}\n"
-            f"File: {source.filename}\n"
-            f"Chunk: {source.chunk_index}\n"
-            f"Text: {source.text}"
-        )
-        for index, source in enumerate(sources)
-    )
+    return f"Answer:\n{answer_snippet}\n\nSources:\n{sources_list}"
 
 
 def create_gemini_answer(question: str, sources: list[DocumentSearchResult]) -> str:
@@ -77,31 +75,29 @@ def create_gemini_answer(question: str, sources: list[DocumentSearchResult]) -> 
     if not GEMINI_API_KEY:
         return create_extractive_answer(question, sources)
 
-    prompt = f"""
-You are a document question-answering assistant.
-Answer the user's question using only the provided document sources.
-If the sources do not contain the answer, say: "I could not find that information in the provided documents."
-Keep the answer concise and factual.
-Return only the final answer text.
-Do not include source labels, chunk text, JSON, markdown tables, or a "Sources" section.
-
-Question:
-{question}
-
-Document sources:
-{_build_context(sources)}
-"""
-
     try:
+        from google import genai
+
+        context = "\n\n---\n\n".join(
+            f"[Source: {source.filename}, chunk {source.chunk_index}]\n{source.text}"
+            for source in sources
+        )
+
+        prompt = (
+            f"You are a helpful assistant answering questions based only on the provided document excerpts.\n\n"
+            f"Document excerpts:\n{context}\n\n"
+            f"Question: {question}\n\n"
+            f"Answer concisely and accurately based only on the excerpts above. "
+            f"If the answer is not in the excerpts, say so."
+        )
+
         client = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
             model=GEMINI_MODEL,
             contents=prompt,
         )
+
+        return response.text or create_extractive_answer(question, sources)
+
     except Exception:
         return create_extractive_answer(question, sources)
-
-    if not response.text:
-        return create_extractive_answer(question, sources)
-
-    return response.text.strip()
