@@ -10,41 +10,28 @@ def _split_sentences(text: str) -> list[str]:
     ]
 
 
-def chunk_text(text: str, chunk_size: int, overlap: int) -> list[str]:
-    sentences = _split_sentences(text)
+def chunk_text(text, chunk_size=800, overlap=150):
 
-    if not sentences:
-        return []
+    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
 
     chunks = []
-    current_sentences = []
-    current_size = 0
 
-    for sentence in sentences:
-        sentence_size = len(sentence)
+    current = ""
 
-        if current_sentences and current_size + sentence_size + 1 > chunk_size:
-            chunks.append(" ".join(current_sentences))
+    for paragraph in paragraphs:
 
-            overlap_sentences = []
-            overlap_size = 0
+        if len(current) + len(paragraph) < chunk_size:
 
-            for previous_sentence in reversed(current_sentences):
-                previous_size = len(previous_sentence)
+            current += "\n\n" + paragraph
 
-                if overlap_sentences and overlap_size + previous_size + 1 > overlap:
-                    break
+        else:
 
-                overlap_sentences.insert(0, previous_sentence)
-                overlap_size += previous_size + 1
+            chunks.append(current.strip())
 
-            current_sentences = overlap_sentences
-            current_size = overlap_size
+            current = paragraph
 
-        current_sentences.append(sentence)
-        current_size += sentence_size + 1
+    if current:
 
-    if current_sentences:
-        chunks.append(" ".join(current_sentences))
+        chunks.append(current)
 
     return chunks
