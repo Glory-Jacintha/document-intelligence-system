@@ -1,0 +1,23 @@
+Employee-Handbook.pdf
+
+What is the attendance policy?
+How many days of PTO do employees get per year?
+What is the company's policy on remote work and work from home?
+What happens during the progressive discipline process?
+What benefits does the company offer for parental leave?
+
+Glory_resume.pdf
+
+What technical skills and tools does Glory know?
+What was Glory's role during the internship at Codenatives?
+What is Glory's educational background?
+What certifications has Glory completed?
+What was the Query Call Dashboard project about?
+
+Glory_report_1.pdf
+
+What is Data Spectra and what problem does it solve?
+What chart types does Data Spectra support?
+What technology stack is used to build Data Spectra?
+What are the limitations of Power BI and Tableau mentioned in this report?
+What future enhancements are planned for Data Spectra?

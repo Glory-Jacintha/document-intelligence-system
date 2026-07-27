@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.py[cod]
+.env
+.streamlit/secrets.toml
+.mypy_cache/
+.pytest_cache/
+data/documents.json
+data/chunks.json
+data/embeddings.json
+data/chroma/
+data/uploads/*
+!data/uploads/.gitkeep
