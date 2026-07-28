@@ -78,26 +78,71 @@ def create_gemini_answer(question: str, sources: list[DocumentSearchResult]) -> 
     try:
         from google import genai
 
-        context = "\n\n---\n\n".join(
-            f"[Source: {source.filename}, chunk {source.chunk_index}]\n{source.text}"
-            for source in sources
-        )
+        # Highest scoring chunks first
+        sources = sorted(sources, key=lambda s: s.score, reverse=True)
 
-        prompt = (
-            f"You are a helpful assistant answering questions based only on the provided document excerpts.\n\n"
-            f"Document excerpts:\n{context}\n\n"
-            f"Question: {question}\n\n"
-            f"Answer concisely and accurately based only on the excerpts above. "
-            f"If the answer is not in the excerpts, say so."
-        )
+        context_parts = []
+
+        for source in sources:
+            context_parts.append(
+                f"""
+DOCUMENT: {source.filename}
+CHUNK: {source.chunk_index}
+RELEVANCE SCORE: {source.score:.3f}
+
+{source.text}
+"""
+            )
+
+        context = "\n\n" + ("=" * 80 + "\n\n").join(context_parts)
+
+        prompt = f"""
+You are a Document Intelligence assistant.
+
+Your job is to answer questions ONLY using the supplied document excerpts.
+
+Rules:
+
+1. Read ALL document excerpts.
+2. Pay close attention to section headings such as:
+   - EDUCATION
+   - EXPERIENCE
+   - PROJECTS
+   - SKILLS
+   - PROFILE
+3. If the answer appears anywhere in the excerpts, answer it directly.
+4. Quote names, organizations and locations exactly as written.
+5. Do NOT invent information.
+6. Only answer "The document does not contain that information."
+   if the answer truly does not exist in ANY excerpt.
+
+QUESTION
+
+{question}
+
+DOCUMENT EXCERPTS
+
+{context}
+
+ANSWER
+"""
+
+        print("\n========== PROMPT SENT TO GEMINI ==========\n")
+        print(prompt)
+        print("\n==========================================\n")
 
         client = genai.Client(api_key=GEMINI_API_KEY)
+
         response = client.models.generate_content(
             model=GEMINI_MODEL,
             contents=prompt,
         )
 
-        return response.text or create_extractive_answer(question, sources)
+        if response.text:
+            return response.text.strip()
 
-    except Exception:
+        return create_extractive_answer(question, sources)
+
+    except Exception as e:
+        print("Gemini Error:", e)
         return create_extractive_answer(question, sources)
