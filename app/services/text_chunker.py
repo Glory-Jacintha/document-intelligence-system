@@ -1,37 +1,75 @@
 import re
+from typing import List
 
 
-def _split_sentences(text: str) -> list[str]:
-    cleaned_text = " ".join(text.split())
-    return [
-        sentence.strip()
-        for sentence in re.split(r"(?<=[.!?])\s+", cleaned_text)
-        if sentence.strip()
-    ]
+class TextChunker:
+    def __init__(self,
+                 chunk_size: int = 700,
+                 overlap: int = 100):
+        self.chunk_size = chunk_size
+        self.overlap = overlap
 
+    def chunk_text(self, text: str) -> List[str]:
 
-def chunk_text(text, chunk_size=800, overlap=150):
+        if not text:
+            return []
 
-    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+        # Normalize whitespace
+        text = text.replace("\r", "")
+        text = re.sub(r"[ \t]+", " ", text)
 
-    chunks = []
+        # Split into paragraphs while preserving document structure
+        paragraphs = [
+            p.strip()
+            for p in text.split("\n\n")
+            if p.strip()
+        ]
 
-    current = ""
+        chunks = []
+        current = ""
 
-    for paragraph in paragraphs:
+        for paragraph in paragraphs:
 
-        if len(current) + len(paragraph) < chunk_size:
+            # Extremely long paragraph
+            if len(paragraph) > self.chunk_size:
 
-            current += "\n\n" + paragraph
+                if current:
+                    chunks.append(current.strip())
+                    current = ""
 
-        else:
+                start = 0
 
+                while start < len(paragraph):
+
+                    end = start + self.chunk_size
+
+                    chunks.append(paragraph[start:end])
+
+                    start += self.chunk_size - self.overlap
+
+                continue
+
+            # Normal paragraph
+
+            if len(current) + len(paragraph) < self.chunk_size:
+
+                current += "\n\n" + paragraph
+
+            else:
+
+                chunks.append(current.strip())
+
+                current = paragraph
+
+        if current:
             chunks.append(current.strip())
 
-            current = paragraph
+        # Remove tiny chunks
 
-    if current:
+        chunks = [
+            chunk
+            for chunk in chunks
+            if len(chunk.strip()) > 40
+        ]
 
-        chunks.append(current)
-
-    return chunks
+        return chunks

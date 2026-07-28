@@ -87,9 +87,6 @@ def query_similar_chunks(
     for _, text, metadata, distance in zip(ids, documents, metadatas, distances):
         score = 1 - distance
 
-        if score < MIN_RELEVANCE_SCORE:
-            continue
-
         doc_id = metadata["document_id"]
         matches.append(
             {

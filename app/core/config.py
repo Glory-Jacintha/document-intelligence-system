@@ -23,7 +23,7 @@ CHUNK_OVERLAP_CHARS = 200
 EMBEDDING_DIMENSIONS = 384
 
 # Minimum score for a chunk to be returned from ChromaDB at all
-MIN_RELEVANCE_SCORE = 0.2
+MIN_RELEVANCE_SCORE = 0.15
 
 # Minimum score for a chunk to be included in the LLM answer context
 # (chunks below this fall back to top-1 only)
