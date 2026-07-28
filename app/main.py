@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.routes.documents import router as documents_router
+from app.services.document_seed import seed_default_documents
 
 
 app = FastAPI(
@@ -10,6 +11,11 @@ app = FastAPI(
 )
 
 app.include_router(documents_router)
+
+
+@app.on_event("startup")
+def _seed_documents_on_startup() -> None:
+    seed_default_documents()
 
 
 @app.get("/")

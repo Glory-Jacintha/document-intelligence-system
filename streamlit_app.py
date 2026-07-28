@@ -21,6 +21,7 @@ from app.api.routes.documents import ask_documents, process_document_for_search
 from app.core.config import ALLOWED_EXTENSIONS, MAX_UPLOAD_SIZE_BYTES, UPLOAD_DIR
 from app.schemas.document import DocumentAnswerRequest, DocumentMetadata
 from app.services.chunk_store import delete_document_chunks
+from app.services.document_seed import seed_default_documents
 from app.services.document_store import (
     add_document,
     delete_document_metadata,
@@ -34,6 +35,15 @@ st.set_page_config(
     page_icon="📄",
     layout="wide",
 )
+
+
+@st.cache_resource
+def _ensure_seed_documents_indexed() -> list[str]:
+    """Runs once per app process (cached), not once per user session."""
+    return seed_default_documents()
+
+
+_ensure_seed_documents_indexed()
 
 
 def _save_uploaded_pdf(uploaded_file) -> DocumentMetadata:
